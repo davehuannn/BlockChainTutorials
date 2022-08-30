@@ -1,0 +1,17 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+// importing simplestorage contract
+import "./SimpleStorage.sol";
+
+// extrastorage contract is inheriting all the functionailities of the simplestorage contract
+contract ExtraStorage is SimpleStorage {
+    
+    // override a function
+    // need to add a virtual the other contract
+    // add an override
+    // virtual override
+    function store(uint256 _favoriteNumber) public override {
+        favoriteNumber = _favoriteNumber + 5;
+    }
+}
