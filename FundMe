@@ -1,0 +1,83 @@
+// get funds from users
+// withdraw funds
+// set a minimum funding value in usd
+
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+// importing code from library "PriceConverter"
+import "./PriceConverter.sol";
+
+
+contract FundMe {
+    using PriceConverter for uint256;
+
+    uint256 public constant MINUMUM_USD = 50 * 1e18;
+    
+    mapping(address => uint256) public addressToAmountFunded;
+
+    address[] public funders;
+
+    address public immutable i_owner;
+
+    // to make the owner whoever is deploying this contract
+    constructor(){
+        i_owner = msg.sender;
+    }
+
+    function fund() public payable { // in order to send ETH we need to use "payable" which allows transaction to send ETH
+        
+        // want to be able to set a minimum fund amount in usd
+        // 1. how do we send ETH to this contract
+        // "msg.value;" to check how much ETH the transaction is sending
+        require(msg.value.getConversionRate() > MINUMUM_USD, "didn't send enough"); 
+        // require the ETH transaction value to be more than 1 ETH - 1e18 == 1 * 10 ** 18 == 1000000000000000000 wei is 1 ETH if not it'll print "did not send enough"
+        // when you do an require statement, if the first section is not met "msg.value > 1e18", any transaction will be cancelled and prior work will be undone (revert)
+
+        // what is revert ?
+        // undo everything that is done in this function if the require conditions are not met
+        // when you do an require statement, if the first section is not met
+
+        // "msg.sender" is the address of whoever calls the fund function
+        funders.push(msg.sender);
+        addressToAmountFunded[msg.sender] = msg.value;
+    }
+
+
+    // onlyOnwer is a modifier below, before running this function do whatever that is in the modifier first and ensure conditions is met
+    function withdraw() public onlyOwner {
+
+        // require(msg.sender == owner, "sender is not owner");
+
+        // withdraw all the money from the funders - using for loop
+        for(uint256 funderIndex = 0; funderIndex < funders.length; funderIndex++) {
+            // code
+            address funder = funders[funderIndex];
+            addressToAmountFunded[funder] = 0;
+        }
+        // reset the array
+        // this starts funders at a completely blank array
+        funders = new address[](0); 
+
+        // actually withdraw the fund
+        // call (most used)
+        (bool callSuccess,) = payable(msg.sender).call{value: address(this).balance}("");
+        require(callSuccess, "Call Failed");
+
+        // // transfer
+        // // msg.sender = address
+        // // payable(msg.sender) = payable address
+        // payable(msg.sender).transfer(address(this).balance);
+
+        // // send
+        // bool sendSuccess = payable(msg.sender).send(address(this).balance);
+        // require(sendSuccess, "Send Failed");
+    }
+
+    // modifier
+    modifier onlyOwner {
+        require(msg.sender == i_owner, "sender is not owner");
+        _;
+    }
+
+}
